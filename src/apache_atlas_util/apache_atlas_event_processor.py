@@ -1,7 +1,6 @@
+import json
 import logging
 from time import sleep
-import json
-
 
 from apache_atlas_util import apache_atlas_event_facade
 
@@ -25,10 +24,11 @@ class ApacheAtlasEventProcessor:
 
             for msg in event_consumer:
                 if msg:
+                    print("{}:{}:{}: key={} ".format(msg.topic, msg.partition,
+                                                     msg.offset, msg.key))
                     event = json.loads(msg.value)
                     print(event)
 
             event_consumer.close()
             logging.info('Sleeping...')
             sleep(5)
-

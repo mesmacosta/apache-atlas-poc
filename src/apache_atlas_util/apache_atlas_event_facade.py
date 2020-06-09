@@ -3,6 +3,7 @@ from kafka import KafkaConsumer
 
 class ApacheAtlasEventFacade:
     __APACHE_ATLAS_SYNC_TOPIC = 'ATLAS_ENTITIES'
+    #__APACHE_ATLAS_SYNC_TOPIC = 'ATLAS_HOOK'
 
     def __init__(self, connection_args):
         self.__connection_args = connection_args
