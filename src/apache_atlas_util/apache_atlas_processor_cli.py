@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 
+from apache_atlas_util import apache_atlas_event_processor
 from apache_atlas_util import apache_atlas_processor
 
 
@@ -32,12 +33,13 @@ class ApacheAtlasProcessorCLI:
     @classmethod
     def add_apache_atlas_cmd(cls, subparsers):
         apache_atlas_parser = subparsers.add_parser("apache-atlas",
-                                                     help="Apache Atlas commands")
+                                                    help="Apache Atlas commands")
 
         apache_atlas_subparsers = apache_atlas_parser.add_subparsers()
 
         cls.add_export_metadata_cmd(apache_atlas_subparsers)
         cls.add_create_metadata_cmd(apache_atlas_subparsers)
+        cls.add_process_event_metadata_cmd(apache_atlas_subparsers)
 
     @classmethod
     def add_export_metadata_cmd(cls, subparsers):
@@ -76,6 +78,19 @@ class ApacheAtlasProcessorCLI:
         create_metadata_parser.set_defaults(func=cls.__create_metadata)
 
     @classmethod
+    def add_process_event_metadata_cmd(cls, subparsers):
+        process_event_metadata_parser = subparsers.add_parser('process-event-metadata',
+                                                              help='Process Event Metadata')
+        process_event_metadata_parser.add_argument('--servers',
+                                                   help='Event bus server list, split by comma',
+                                                   required=True)
+        process_event_metadata_parser.add_argument('--consumer-group-id',
+                                                   help='Consumer Group id used to connect to '
+                                                        'ATLAS_ENTITIES topic',
+                                                   required=True)
+        process_event_metadata_parser.set_defaults(func=cls.__process_event_metadata)
+
+    @classmethod
     def __export_metadata(cls, args):
         apache_atlas_processor.ApacheAtlasProcessor({
             'host': args.host,
@@ -92,6 +107,13 @@ class ApacheAtlasProcessorCLI:
             'user': args.user,
             'pass': args.passsword
         }).create_metadata()
+
+    @classmethod
+    def __process_event_metadata(cls, args):
+        apache_atlas_event_processor.ApacheAtlasEventProcessor({
+            'servers': args.servers.split(','),
+            'consumer_group_id': args.consumer_group_id
+        }).process_event_metadata()
 
 
 def main():
