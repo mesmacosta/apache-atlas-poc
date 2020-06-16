@@ -32,7 +32,9 @@ class ApacheAtlasFacade:
     def create_metadata(self):
         initial_guid = -5000
 
-        for _ in range(1000):
+        # 'b183c071-0d6e-4e0a-9d60-33151c78a7b3'
+
+        for _ in range(1):
 
             column_guids = []
 
@@ -86,13 +88,13 @@ class ApacheAtlasFacade:
                     'columns': [],
                     'viewExpandedText': None,
                     'sd': {
-                        'guid': 'a0989a5b-19aa-4ac4-92db-e2449554c799',
+                        'guid': '10db96e7-f73f-4e2b-943e-2107ce24acc7',
                         'typeName': 'StorageDesc'
                     },
                     'tableType': 'External',
                     'createTime': 1589983847369,
                     'db': {
-                        'guid': 'c0ebcb5e-21f8-424d-bf11-f39bb943ae2c',
+                        'guid': '219b1923-98cc-4b36-a9aa-38e9c513e80b',
                         'typeName': 'DB'
                     },
                     'retention': 1589983847365,
@@ -205,7 +207,7 @@ class ApacheAtlasFacade:
                 if type_guids:
                     bulk_collection = self.__apache_atlas.entity_bulk(guid=type_guids)
                     for collection in bulk_collection:
-                        entities = collection.entities()
+                        entities = collection.entities_with_relationships(attributes=["database"])
                         for expanded_entity in entities:
                             print('Expanded Entity:')
                             guid = expanded_entity.guid
@@ -238,6 +240,59 @@ class ApacheAtlasFacade:
             'entities': expanded_entity_dict,
             'classifications': classifications_dict
         }
+
+    def delete_metadata(self):
+        # We store each type in a dict to normalize it later on.
+        entities_guids = []
+        self.__apache_atlas.entity_bulk.delete(guid=['472686a8-86e7-49b1-8b83-8bb93e4181c6'])
+        # self.__delete_all(entities_guids)
+
+    def __delete_all(self, entities_guids):
+        for typedef in self.__apache_atlas.typedefs:
+
+            # Collect entities
+            # Clean up entity dict
+            for entity_type in typedef.entityDefs:
+                print('')
+                fetched_search_results = []
+                print('Entity Type: {}'.format(entity_type.name))
+                print(entity_type._data)
+
+                params = {'typeName': entity_type.name, 'offset': 0, 'limit': 100}
+                search_results = self.__apache_atlas.search_dsl(**params)
+                # Fetch lazy response
+                search_results = [entity for s in search_results for entity in s.entities]
+
+                fetched_search_results.extend(search_results)
+
+                print('type: {}'.format(params['typeName']))
+                while search_results:
+                    params['offset'] = params['offset'] + params['limit']
+                    print('offset: {}, limit: {}'.format(params['offset'], params['limit']))
+                    search_results = self.__apache_atlas.search_dsl(**params)
+                    # Fetch lazy response
+                    search_results = [entity for s in search_results for entity in s.entities]
+                    fetched_search_results.extend(search_results)
+
+                print('')
+                for entity in fetched_search_results:
+                    guid = entity.guid
+                    entities_guids.append(guid)
+
+                typedef_dict = {
+                    "enumDefs": [],
+                    "structDefs": [],
+                    "classificationDefs": [],
+                    "entityDefs": [entity_type._data]
+                }
+
+                try:
+                    entity = self.__apache_atlas.entity_guid(entity_type.guid)
+                    entity.delete()
+                    self.__apache_atlas.typedefs.delete(data=typedef_dict)
+                except Exception as err:
+                    print(str(err))
+        self.__apache_atlas.entity_bulk.delete(guid=entities_guids)
 
     @classmethod
     def get_random_data_type(cls):

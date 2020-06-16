@@ -22,6 +22,19 @@ class ApacheAtlasProcessor:
 
         return metadata_dict
 
+    def delete_metadata(self):
+        logging.info('')
+        logging.info('===> DELETE Metadata from Apache Atlas [STARTED]')
+
+        logging.info('')
+        metadata_dict = self.__apache_atlas_facade.delete_metadata()
+        print(metadata_dict)
+
+        logging.info('')
+        logging.info('==== DELETE Metadata from Apache Atlas [FINISHED] =============')
+
+        return metadata_dict
+
     def create_metadata(self):
         logging.info('')
         logging.info('===> Create Metadata on Apache Atlas [STARTED]')
